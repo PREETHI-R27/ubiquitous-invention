@@ -1,0 +1,81 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import numpy as np
+import re
+
+# Step 1: Fetch and parse webpage
+url = "https://webscraper.io/test-sites/e-commerce/allinone/computers/laptops"
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+response = requests.get(url, headers=headers)
+soup = BeautifulSoup(response.text, 'html.parser')
+
+# Step 2: Extract data 
+products = []
+for card in soup.find_all('div', class_='product-wrapper')[:30]:
+    title = card.find('a', class_='title').text.strip()
+    price = card.find('h4', class_='price').text.strip()
+    description = card.find('p', class_='description').text.strip()
+    product_url = 'https://webscraper.io' + card.find('a', class_='title')['href']
+    image_url = card.find('img')['src']
+
+    # Display extracted data for each product
+    print(f"Title: {title}")
+    print(f"Price: {price}")
+    print(f"Description: {description}")
+    print(f"Product URL: {product_url}")
+    print(f"Image URL: {image_url}")
+    print("-" * 50)
+
+    products.append({
+        'Title': title,
+        'Price': price,
+        'Description': description,
+        'Product_URL': product_url,
+        'Image_URL': image_url
+    })
+
+df = pd.DataFrame(products)
+df = df.drop(columns=['Image_URL'])
+
+print("\nBasic Analysis:")
+print("DataFrame Head:")
+print(df.head().to_string(index=False))
+print("\nDataFrame Shape:")
+print(df.shape)
+print("\nDataFrame Describe:")
+print(df.describe())
+
+#  Clean data
+# Remove '$' from Price and convert to float
+df['Price'] = df['Price'].str.replace('$', '').astype(float)
+# Ensure Description is not empty; replace with 'No description' if empty
+df['Description'] = df['Description'].replace('', 'No description')
+# Normalize Title (remove extra spaces, convert to title case)
+df['Title'] = df['Title'].str.strip().str.title()
+print("\nCleaned DataFrame:")
+print(df.head())
+
+# Step 5: Feature Engineering
+# Feature 1: Price Category (Low: <300, Medium: 300-600, High: >600)
+df['Price_Category'] = pd.cut(df['Price'], bins=[0, 300, 600, np.inf], labels=['Low', 'Medium', 'High'], right=False)
+
+
+# Extract laptop specifications from description
+def extract_specs(description):
+    inch = re.search(r'(\d+\.?\d*)"', description)
+    ram = re.search(r'(\d+)GB', description)
+    storage = re.search(r'(\d+)GB (SSD|HDD)', description) or re.search(r'(\d+)GB(?!")', description)
+
+    return {
+        'Inch': inch.group(1) if inch else None,
+        'RAM_GB': ram.group(1) if ram else None,
+        'Storage_GB': storage.group(1) if storage else None
+    }
+
+specs_df = df['Description'].apply(lambda x: pd.Series(extract_specs(x)))
+df = pd.concat([df, specs_df], axis=1)
+
+print("\nDataFrame with Engineered Features:")
+print(df[['Title', 'Price', 'Price_Category', 'Inch', 'RAM_GB', 'Storage_GB']].head())
+
