@@ -1,0 +1,215 @@
+import psycopg2
+from urllib.parse import urlparse
+
+# CREATE TABLES zomato & delivery
+DATABASE_URL = 'postgresql'
+result = urlparse(DATABASE_URL)
+
+conn = psycopg2.connect(
+    host=result.hostname,
+    port=result.port or 5432,
+    dbname=result.path.lstrip('/'),
+    user=result.username,
+    password=result.password,
+    sslmode='require'
+)
+cur = conn.cursor()
+
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS delivery (
+        delivery_id SERIAL PRIMARY KEY,
+        name VARCHAR(100),
+        vehicle VARCHAR(50)
+    )
+""")
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS zomato (
+        order_id SERIAL PRIMARY KEY,
+        customer VARCHAR(100),
+        restaurant VARCHAR(100),
+        amount DECIMAL(10, 2),
+        delivery_id INTEGER REFERENCES delivery(delivery_id)
+    )
+""")
+
+conn.commit()
+print("Tables 'delivery' and 'zomato' created.")
+cur.close()
+conn.close()
+
+# INSERT SAMPLE DATA
+DATABASE_URL = 'postgresql'
+result = urlparse(DATABASE_URL)
+
+conn = psycopg2.connect(
+    host=result.hostname,
+    port=result.port or 5432,
+    dbname=result.path.lstrip('/'),
+    user=result.username,
+    password=result.password,
+    sslmode='require'
+)
+cur = conn.cursor()
+
+# Insert delivery personnel
+cur.execute("INSERT INTO delivery (name, vehicle) VALUES (%s, %s) RETURNING delivery_id", ('Tina', 'Bike'))
+tina_id = cur.fetchone()[0]
+cur.execute("INSERT INTO delivery (name, vehicle) VALUES (%s, %s) RETURNING delivery_id", ('Dina', 'Cycle'))
+dina_id = cur.fetchone()[0]
+cur.execute("INSERT INTO delivery (name, vehicle) VALUES (%s, %s) RETURNING delivery_id", ('Kina', 'Scooter'))
+kina_id = cur.fetchone()[0]
+cur.execute("INSERT INTO delivery (name, vehicle) VALUES (%s, %s) RETURNING delivery_id", ('Lina', 'Bike'))
+lina_id = cur.fetchone()[0]
+
+# Insert orders
+cur.executemany("INSERT INTO zomato (customer, restaurant, amount, delivery_id) VALUES (%s, %s, %s, %s)", [
+    ('order1', 'Pizza Place', 200, tina_id),
+    ('order2', 'Burger Joint', 150, dina_id),
+    ('order3', 'Sushi Bar', 300, kina_id),
+    ('order4', 'Pasta House', 250, lina_id),
+    ('order6', 'Pasta House', 350, lina_id)
+])
+
+conn.commit()
+print("Sample data inserted into 'delivery' and 'zomato'.")
+cur.close()
+conn.close()
+
+# PERFORM JOIN OPERATIONS
+DATABASE_URL = 'postgresql'
+result = urlparse(DATABASE_URL)
+
+conn = psycopg2.connect(
+    host=result.hostname,
+    port=result.port or 5432,
+    dbname=result.path.lstrip('/'),
+    user=result.username,
+    password=result.password,
+    sslmode='require'
+)
+cur = conn.cursor()
+
+# Inner Join
+cur.execute("""
+    SELECT z.customer, z.restaurant, z.amount, d.name AS delivery_person
+    FROM zomato z
+    INNER JOIN delivery d ON z.delivery_id = d.delivery_id
+""")
+print("Inner Join Results:")
+for row in cur.fetchall():
+    print(row)
+
+# Left Join
+cur.execute("""
+    SELECT d.name AS delivery_person, z.customer, z.restaurant
+    FROM delivery d
+    LEFT JOIN zomato z ON d.delivery_id = z.delivery_id
+""")
+print("Left Join Results:")
+for row in cur.fetchall():
+    print(row)
+
+# Right Join
+cur.execute("""
+    SELECT z.customer, z.restaurant, d.name AS delivery_person
+    FROM zomato z
+    RIGHT JOIN delivery d ON z.delivery_id = d.delivery_id
+""")
+print("Right Join Results:")
+for row in cur.fetchall():
+    print(row)
+
+# Cross Join (Limited)
+cur.execute("""
+    SELECT z.customer, d.name AS delivery_person
+    FROM zomato z
+    CROSS JOIN delivery d
+    LIMIT 8
+""")
+print("Cross Join Results (Limited):")
+for row in cur.fetchall():
+    print(row)
+
+cur.close()
+conn.close()
+
+# INSERT A NEW ORDER
+DATABASE_URL = 'postgresql'
+result = urlparse(DATABASE_URL)
+
+conn = psycopg2.connect(
+    host=result.hostname,
+    port=result.port or 5432,
+    dbname=result.path.lstrip('/'),
+    user=result.username,
+    password=result.password,
+    sslmode='require'
+)
+cur = conn.cursor()
+
+cur.execute("INSERT INTO zomato (customer, restaurant, amount, delivery_id) VALUES (%s, %s, %s, %s)", ('Eve', 'Taco Stand', 10.00, lina_id))
+conn.commit()
+print("Inserted new order for Eve.")
+cur.close()
+conn.close()
+
+# UPDATE AN ORDER
+DATABASE_URL = 'postgresql'
+result = urlparse(DATABASE_URL)
+
+conn = psycopg2.connect(
+    host=result.hostname,
+    port=result.port or 5432,
+    dbname=result.path.lstrip('/'),
+    user=result.username,
+    password=result.password,
+    sslmode='require'
+)
+cur = conn.cursor()
+
+cur.execute("UPDATE zomato SET amount = %s, delivery_id = %s WHERE customer = %s", (22.00, tina_id, 'order1'))
+conn.commit()
+print("Updated order1's order.")
+cur.close()
+conn.close()
+
+# DELETE AN ORDER
+DATABASE_URL = 'postgresql'
+result = urlparse(DATABASE_URL)
+
+conn = psycopg2.connect(
+    host=result.hostname,
+    port=result.port or 5432,
+    dbname=result.path.lstrip('/'),
+    user=result.username,
+    password=result.password,
+    sslmode='require'
+)
+cur = conn.cursor()
+
+cur.execute("DELETE FROM zomato WHERE customer = %s", ('order2',))
+conn.commit()
+print("Deleted order2's order.")
+cur.close()
+conn.close()
+
+# where clause
+DATABASE_URL = 'postgresql'
+result = urlparse(DATABASE_URL)
+
+conn = psycopg2.connect(
+    host=result.hostname,
+    port=result.port or 5432,
+    dbname=result.path.lstrip('/'),
+    user=result.username,
+    password=result.password,
+    sslmode='require'
+)
+cur = conn.cursor()
+
+cur.execute("SELECT * FROM zomato WHERE amount > 200")
+print("Orders with amount greater than 200:")
+for row in cur.fetchall():
+    print(row)
+cur.close()
+conn.close()
