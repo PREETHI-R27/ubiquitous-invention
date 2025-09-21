@@ -1,0 +1,72 @@
+import psycopg2
+
+# Connect to PostgreSQL database 
+conn = psycopg2.connect(
+    dbname="testdb",
+    user="postgres",
+    password="password",
+    host="localhost"
+)
+cur = conn.cursor()
+
+# Create tables if they don't exist
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS samsung (
+        company_id SERIAL PRIMARY KEY,
+        company_name VARCHAR(100),
+        logo BYTEA
+    )
+""")
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS products (
+        product_id SERIAL PRIMARY KEY,
+        product_name VARCHAR(100),
+        manager VARCHAR(100),
+        company_id INTEGER REFERENCES samsung(company_id)
+    )
+""")
+
+# Insert Samsung record with image from directory
+with open('samsung_logo.jpg', 'rb') as f:
+    logo_data = f.read()
+cur.execute("INSERT INTO samsung (company_name, logo) VALUES (%s, %s) RETURNING company_id", ('Samsung', logo_data))
+company_id = cur.fetchone()[0]
+
+# Insert products with managers
+cur.executemany("INSERT INTO products (product_name, manager, company_id) VALUES (%s, %s, %s)", [
+    ('Galaxy S21', 'Tina', company_id),
+    ('Galaxy Note', 'Dina', company_id),
+    ('Galaxy Tab', 'Kina', company_id),
+    ('Galaxy Watch', 'Lina', company_id)
+])
+
+# Update: Rename Galaxy S21 to Galaxy S22
+cur.execute("UPDATE products SET product_name = %s WHERE product_name = %s", ('Galaxy S22', 'Galaxy S21'))
+
+# Delete: Remove product managed by Lina
+cur.execute("DELETE FROM products WHERE manager = %s", ('Lina',))
+
+# Where Clause: Select products managed by Tina
+cur.execute("SELECT * FROM products WHERE manager = %s", ('Tina',))
+print("Products managed by Tina:", cur.fetchall())
+
+# Inner Join
+cur.execute("SELECT p.product_name, p.manager, s.company_name FROM products p INNER JOIN samsung s ON p.company_id = s.company_id")
+print("Inner Join:", cur.fetchall())
+
+# Left Join
+cur.execute("SELECT s.company_name, p.product_name FROM samsung s LEFT JOIN products p ON s.company_id = p.company_id")
+print("Left Join:", cur.fetchall())
+
+# Right Join
+cur.execute("SELECT p.product_name, s.company_name FROM products p RIGHT JOIN samsung s ON p.company_id = s.company_id")
+print("Right Join:", cur.fetchall())
+
+# Cross Join (limited to 5 rows)
+cur.execute("SELECT s.company_name, p.product_name FROM samsung s CROSS JOIN products p LIMIT 5")
+print("Cross Join (Limited):", cur.fetchall())
+
+# Commit changes and close connection
+conn.commit()
+cur.close()
+conn.close()
