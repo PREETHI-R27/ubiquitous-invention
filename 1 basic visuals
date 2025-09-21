@@ -1,0 +1,124 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import squarify
+from statsmodels.graphics.mosaicplot import mosaic
+import plotly.express as px
+from pandas.plotting import parallel_coordinates
+
+# sample dataframe
+df = pd.DataFrame({
+    'brand': ['Adidas','Nike','Puma','Adidas','Nike','Puma','Adidas','Nike'],
+    'platform': ['FB','FB','FB','IG','IG','IG','TW','TW'],
+    'likes': [100, 150, 80, 200, 220, 130, 90, 60],
+    'comments': [20, 25, 15, 40, 50, 30, 12, 8],
+    'shares': [5, 10, 3, 15, 20, 7, 4, 2],
+    'month': ['Jan','Jan','Jan','Feb','Feb','Feb','Mar','Mar']
+})
+df['engagement'] = df[['likes','comments','shares']].sum(axis=1)
+
+# 1 Histogram
+sns.histplot(df['likes'], bins=5, kde=True)
+plt.title('Histogram')
+plt.show()
+
+# 2 Boxplot
+sns.boxplot(x='brand', y='likes', data=df)
+plt.title('Boxplot')
+plt.show()
+
+# 3 Violin plot
+sns.violinplot(x='brand', y='likes', data=df, inner='quartile')
+plt.title('Violin')
+plt.show()
+
+# 4 Scatter
+sns.scatterplot(x='likes', y='comments', hue='brand', data=df)
+plt.title('Scatter')
+plt.show()
+
+# 5 Line plot
+df.groupby('month')['engagement'].sum().plot(marker='o')
+plt.title('Line plot')
+plt.show()
+
+# 6 Area plot
+df.groupby('month')['engagement'].sum().plot.area()
+plt.title('Area plot')
+plt.show()
+
+# 7 Bar plot
+sns.barplot(x='brand', y='engagement', data=df)
+plt.title('Bar plot')
+plt.show()
+
+# 8 Horizontal bar
+sns.barplot(y='brand', x='engagement', data=df)
+plt.title('Horizontal bar')
+plt.show()
+
+# 9 Grouped bar
+df.groupby(['month','brand'])['engagement'].sum().unstack().plot(kind='bar')
+plt.title('Grouped bar')
+plt.show()
+
+# 10 Stacked bar
+df.groupby(['month','brand'])['engagement'].sum().unstack().plot(kind='bar', stacked=True)
+plt.title('Stacked bar')
+plt.show()
+
+# 11 100% stacked bar
+d = df.groupby(['month','brand'])['engagement'].sum().unstack()
+d.div(d.sum(axis=1), axis=0).plot(kind='bar', stacked=True)
+plt.title('100% Stacked')
+plt.show()
+
+# 12 Mosaic
+mosaic(df, ['brand','platform'])
+plt.title('Mosaic')
+plt.show()
+
+# 13 Treemap
+agg = df.groupby('brand')['engagement'].sum().reset_index()
+squarify.plot(sizes=agg['engagement'], label=agg['brand'], alpha=.7)
+plt.title('Treemap')
+plt.axis('off')
+plt.show()
+
+# 14 Nested Pie
+outer = df.groupby('brand')['engagement'].sum()
+inner = df.groupby(['brand','platform'])['engagement'].sum()
+plt.pie(outer, radius=1)
+plt.pie(inner, radius=0.7)
+plt.title('Nested Pie')
+plt.show()
+
+# 15 Pie
+vals = df.groupby('brand')['engagement'].sum()
+plt.pie(vals, labels=vals.index, autopct='%1.1f%%')
+plt.title('Pie')
+plt.show()
+
+# 16 Heatmap
+sns.heatmap(df[['likes','comments','shares','engagement']].corr(), annot=True)
+plt.title('Heatmap')
+plt.show()
+
+# 17 Pairplot
+sns.pairplot(df[['likes','comments','shares','engagement']])
+plt.show()
+
+# 18 Parallel coordinates
+parallel_coordinates(df[['brand','likes','comments','shares']], 'brand')
+plt.title('Parallel Coordinates')
+plt.show()
+
+# 19 Parallel categories (Plotly - interactive)
+fig = px.parallel_categories(df[['brand','platform','month']])
+fig.show()
+
+# 20 KDE
+sns.kdeplot(df['engagement'], fill=True)
+plt.title('KDE')
+plt.show()
