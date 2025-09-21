@@ -1,0 +1,80 @@
+
+
+import fitz, camelot
+from PyPDF2 import PdfReader, PdfMerger
+
+
+# Extract text from PDF
+def extract_text(pdf):
+    return [p.get_links() for p in fitz.open(pdf)]
+
+# Extract links from PDF
+def extract_links(pdf):
+    return [p.get_links() for p in fitz.open(pdf)]
+
+# Extract images from PDF
+def extract_images(pdf):
+    return [p.get_images() for p in fitz.open(pdf)]
+
+# Merge two PDFs
+def merge_pdfs(p1, p2, out):
+    merger = PdfMerger()
+    merger.append(p1)
+    merger.append(p2)
+    merger.write(out)
+    merger.close()
+
+# Extract tables
+def extract_tables(pdf):
+    return camelot.read_pdf(pdf, pages='all')
+
+# Menu
+def menu():
+    while True:
+        print("\nPDF Processing Menu")
+        print("1. Extract Text")
+        print("2. Extract Links")
+        print("3. Extract Images")
+        print("4. Merge PDFs")
+        print("5. Extract Tables")
+        print("6. Exit")
+
+        ch=input("Enter choice: ")
+        if ch=='1':
+            pdf_path = input("Enter the path to the PDF file: ")
+            print("--- Extracted Text ---")
+            print(extract_text(pdf_path))
+            print("--------------------")
+        elif ch=='2':
+            pdf_path = input("Enter the path to the PDF file: ")
+            print("--- Extracted Links ---")
+            print(extract_text(pdf_path))
+            print("---------------------")
+        elif ch=='3':
+            pdf_path = input("Enter the path to the PDF file: ")
+            print("--- Extracted Images ---")
+            print(extract_text(pdf_path))
+            print("----------------------")
+        elif ch=='4':
+            pdf1 = input("Enter the path to the first PDF file: ")
+            pdf2 = input("Enter the path to the second PDF file: ")
+            output = input("Enter the output path for the merged PDF: ")
+            merge_pdfs(pdf1, pdf2, output)
+            print(f"PDFs merged successfully to {output}")
+        elif ch=='5':
+            pdf_path = input("Enter the path to the PDF file: ")
+            print("--- Extracted Tables ---")
+            tables = extract_tables(pdf_path)
+            if tables:
+                for i, table in enumerate(tables):
+                    print(f"Table {i+1}:\n{table.df}") # Access DataFrame from the Table object
+            else:
+                print("No tables found")
+            print("----------------------")
+        elif ch=='6':
+            print("Exiting menu")
+            break
+        else:
+            print("Invalid choice")
+
+menu()
