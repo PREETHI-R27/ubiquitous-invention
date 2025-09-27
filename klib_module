@@ -1,0 +1,35 @@
+!pip install klib
+
+
+import pandas as pd
+import seaborn as sns
+import klib
+
+df = pd.read_csv("/content/retail_store_sales.csv")
+df
+
+df.info()
+
+# 1. Visualize Categorical Features
+klib.cat_plot(df)  # shows frequency of categorical variables
+
+# 2. Correlation Plots
+klib.corr_plot(df)  # heatmap of correlations
+klib.corr_mat(df)   # correlation matrix
+
+# Interactive correlation plot using Plotly
+klib.corr_interactive_plot(df, split="neg").show()
+
+# 3. Distribution Plots
+klib.dist_plot(df)  # distribution for numeric features
+
+# 4. Missing Values Handling
+klib.missingval_plot(df)   # missing value visualization
+
+# Data Cleaning Utilities
+klib.data_cleaning(df)          # cleaning dataset
+klib.clean_column_names(df)     # standardize column names
+klib.convert_datatypes(df)      # auto convert dtypes
+klib.drop_missing(df)           # drop missing values
+klib.mv_col_handling(df)        # handle multivariate missing values
+klib.pool_duplicate_subsets(df) # detect duplicates
