@@ -1,0 +1,24 @@
+pip install autoviz # install before use
+
+from autoviz.AutoViz_Class import AutoViz_Class
+
+Change the below 2 lines of code according to the dataset
+filename = "/content/ai_job_dataset.csv"
+target = "years_experience" # column/feature name
+
+
+from autoviz.AutoViz_Class import AutoViz_Class
+
+AV = AutoViz_Class()
+d = AV.AutoViz(
+    filename,
+    sep=",",
+    depVar=target,
+    dfte=None,
+    header=0,
+    verbose=1,
+    lowess=False,
+    chart_format="svg",
+    max_rows_analyzed=150000,
+    max_cols_analyzed=30,
+)
